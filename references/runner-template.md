@@ -388,6 +388,38 @@ def main():
     save_log(history, baseline_composite, final_composite)
 ```
 
+## JSON Enforcement for CLI-Based Runners
+
+When using `claude -p` (or any CLI wrapper) to run the target prompt, the CLI may inject its own system prompt (~31K tokens), which dilutes your prompt's JSON output instructions. This causes the model to output prose summaries instead of structured JSON.
+
+### The Fix: JSON Suffix + Retry
+
+Append a JSON enforcement suffix to the END of the user message (after the input text). This places the instruction at the model's attention boundary — right before generation starts — where instruction-following is strongest.
+
+```python
+_JSON_SUFFIX = (
+    "\n\n---\nRESPOND WITH ONLY THE JSON OBJECT. "
+    "No prose, no summaries, no commentary before or after the JSON. "
+    "Your entire response must be a single valid JSON object starting with {"
+)
+
+_JSON_RETRY_PREFIX = (
+    "CRITICAL: Your previous attempt returned prose instead of JSON. "
+    "You MUST output ONLY a valid JSON object. No prose, no summaries, "
+    "no markdown fences. Start your response with { and end with }.\n\n"
+)
+```
+
+On the first attempt, append `_JSON_SUFFIX` after the input text. On parse failure, retry once with `_JSON_RETRY_PREFIX` prepended AND `_JSON_SUFFIX` appended.
+
+### What Does NOT Work
+
+- **`--json-schema` CLI flag**: Partially effective but when validation fails, it strips the response entirely, returning an empty string. Harmful.
+- **`--bare` CLI flag**: Removes the injected system prompt but requires an API key (incompatible with plan subscriptions).
+- **Prefix-only enforcement** (before the input text): The model's attention on early tokens fades over long inputs. The suffix at the end is what matters.
+
+---
+
 ## Key Design Decisions
 
 ### Why Tournament Selection?

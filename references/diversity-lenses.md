@@ -30,18 +30,18 @@ Without diversity lenses, N parallel optimizer calls tend to converge on the sam
 **Risk:** Counter-examples can be confusing if not clearly marked as "DON'T do this." Always pair with the correct version.
 
 ### 4. constraint_tightening
-**Hint:** Make vague instructions more specific and actionable. Replace "should" with "MUST", add exact thresholds, specify minimum counts. Turn guidelines into hard constraints with clear pass/fail.
+**Hint:** Replace ambiguous language with clearer intent — but use concrete examples and WRONG/RIGHT pairs, NOT "MUST"/"REQUIRED" mandates (those cause regression in practice). Tighten by showing what's wrong, not by adding rules.
 
-**When it wins:** The prompt uses soft language ("try to", "when possible", "ideally") and the model treats these as optional. Tightening language makes requirements non-negotiable.
+**When it wins:** The prompt uses genuinely ambiguous language and the model is making reasonable-but-wrong interpretations. A concrete example disambiguates what abstract rules cannot.
 
-**Risk:** Over-constraining can cause the model to produce rigid, unnatural outputs. Use sparingly and only on metrics that are consistently underperforming.
+**Risk:** Hard "MUST"/"REQUIRED" language for fields the model may not know (ontology IDs, external database accessions) causes the model to fabricate values, leading to composite regression. Tested and confirmed harmful. Use "provide whenever possible" + inline examples instead.
 
 ### 5. checklist_approach
-**Hint:** Add a pre-output self-check or checklist that the model must run before producing its final output. Target the weakest metrics with specific verification steps.
+**Hint:** Add a numbered checklist item describing what good output looks like for a specific metric — but NEVER add "before finalizing, scan..." self-verification steps. Those cause the target model to output prose commentary instead of structured output.
 
-**When it wins:** The model produces output that's close but misses specific details. A checklist at the end catches omissions before the model commits to its response.
+**When it wins:** The prompt already has a quality checklist and a new item would naturally fit, describing a specific property of correct output (e.g., "Every claim has at least one evidence link").
 
-**Risk:** Checklists add output tokens. Keep them to 5-8 items max, focused on the weakest metrics.
+**Risk:** Self-verification steps ("before finalizing, scan every entity...") are catastrophically harmful — tested and confirmed to cause the model to output prose summaries instead of JSON. Only add items that describe desired output properties, not verification procedures.
 
 ### 6. negative_space
 **Hint:** Focus on what the prompt does NOT say. Identify implicit assumptions the model might make that lead to errors. Add explicit disambiguation for ambiguous cases.

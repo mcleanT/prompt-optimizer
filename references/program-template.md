@@ -42,6 +42,22 @@ You output: A JSON object containing 1-3 **surgical find/replace edits** to the 
 | ... | ... | ... |
 -->
 
+### Edit Strategy — What Works vs What Fails
+
+**Proven effective (use these):**
+- **Counter-examples (WRONG/RIGHT pairs)**: The single most effective edit type. Showing the model a concrete mistake alongside the correct form drives larger metric gains than any other approach.
+- **Soft nudges with inline examples**: "Provide whenever possible" + 2-3 concrete examples outperforms hard mandates. The model learns from examples, not rules.
+- **Target distribution statements**: "A typical output should contain 45-60% X, 25-35% Y..." gives the model a calibration target without rigidly constraining individual decisions.
+- **Extending vocabulary/mapping tables**: Adding common off-vocabulary items with canonical mappings directly eliminates those errors.
+
+**Proven harmful (DO NOT use):**
+- **REQUIRED/MUST language for fields the model may not know** (e.g., ontology IDs, external database accessions): The model fabricates values or gets confused, causing composite regression. Use "provide whenever possible" + examples instead.
+- **Self-verification checklist steps** ("Before finalizing, scan every entity..."): Catastrophically harmful — causes the target model to output prose commentary about the scan results instead of structured output. Never add "before finalizing" or "scan your output" instructions.
+- **Hard multi-criterion gates** ("MUST satisfy ALL of the following criteria to assign X"): Too restrictive for stochastic LLM behavior. The model either ignores the gate entirely or over-applies it, causing guard metric regression. Use calibration examples instead.
+- **Replacing existing working instructions wholesale**: Prefer extending (adding examples, adding rows to tables) over rewriting. Rewrites risk losing phrasing that guards rely on.
+
+When in doubt, add a WRONG/RIGHT example rather than a new rule.
+
 ### Edit Principles
 - **1-3 edits per iteration**. Each edit is a find/replace on the prompt text.
 - **Targeted**: Each edit should address ONE specific error pattern from the analysis.

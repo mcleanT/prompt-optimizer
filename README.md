@@ -115,8 +115,8 @@ Tournament selection uses 10 strategic lenses to prevent the optimizer from gett
 | `structural_rewrite` | Reorganize prompt sections for clarity |
 | `example_driven` | Add concrete input→output examples |
 | `counter_example` | Show common mistakes and correct versions |
-| `constraint_tightening` | Replace "should" with "MUST", add thresholds |
-| `checklist_approach` | Add pre-output self-verification steps |
+| `constraint_tightening` | Clarify ambiguous language with examples (not "MUST" mandates) |
+| `checklist_approach` | Describe desired output properties (not self-verification scans) |
 | `negative_space` | Make implicit assumptions explicit |
 | `cross_metric_synergy` | One edit that improves multiple metrics |
 | `simplification` | Remove contradictory or redundant rules |
@@ -149,6 +149,32 @@ These are hard-won lessons from production optimization campaigns:
 - **Track cost at every step.** Know your per-iteration cost before starting an overnight run.
 - **Version everything.** Save prompt + scores for every iteration.
 
+## Battle-Tested Lessons
+
+These patterns were discovered during optimization campaigns and are now encoded into the templates. Ignoring them leads to wasted iterations.
+
+### What Works (Highest to Lowest Impact)
+
+| Technique | Impact | Example |
+|-----------|--------|---------|
+| **WRONG/RIGHT counter-examples** | +0.15 composite in 1 iteration | `WRONG: "certainty": "high" for single-condition observation` / `RIGHT: "medium"` |
+| **Soft nudges + inline examples** | +0.05-0.10 per metric | `"Provide whenever possible — e.g., {"name": "BMP4", "ontology_id": "UniProt:P21275"}"` |
+| **Target distribution statements** | +0.05-0.15 for diversity metrics | `"A typical output should contain 45-60% high, 25-35% medium, 10-20% low"` |
+| **Extending vocabulary tables** | +0.03-0.05 per metric | Adding off-vocabulary predicates to a REMOVED predicates mapping table |
+
+### What Fails (Confirmed Harmful)
+
+| Technique | Observed Impact | Why It Fails |
+|-----------|----------------|-------------|
+| **"REQUIRED" language for uncertain fields** | -0.13 composite regression | Model fabricates values or gets confused trying to comply |
+| **Self-verification checklists** | -0.53 composite regression | Model outputs prose commentary about the scan instead of structured output |
+| **Hard multi-criterion gates** | -0.10 composite regression | Too restrictive; model ignores the gate or over-applies it |
+| **`--json-schema` CLI flag** | Silent data loss | Strips response entirely when validation fails, returning empty string |
+
+### JSON Enforcement for CLI Runners
+
+When using `claude -p` or similar CLI wrappers, the CLI injects its own system prompt (~31K tokens), diluting your JSON output instructions. Fix: append a JSON enforcement suffix to the END of the user message (after input text). See [`references/runner-template.md`](references/runner-template.md) for the full pattern with retry.
+
 ## Installation
 
 ### As a Claude Code Skill
@@ -169,6 +195,7 @@ The reference files in `references/` contain complete templates you can use inde
 - [`references/program-template.md`](references/program-template.md) — Optimizer agent prompt template
 - [`references/diversity-lenses.md`](references/diversity-lenses.md) — Strategic diversity catalog
 - [`references/runner-template.md`](references/runner-template.md) — Full optimization loop template
+- [`references/dispatch-template.md`](references/dispatch-template.md) — Subagent dispatch prompt template (for multi-agent architectures)
 
 ## Origin
 
